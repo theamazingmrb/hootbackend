@@ -4,6 +4,7 @@
     POST	createComment	200	/hoots/:hootId/comments	Create a comment
 */
 const router = require("express").Router();
+const { trusted } = require("mongoose");
 const Hoot = require("../models/hoot");
 const CATEGORIES = ["News", "Sports", "Games", "Movies", "Music", "Television"];
 
@@ -121,7 +122,7 @@ router.post("/", async (req, res) => {
 //  GET	show	200	/hoots/:hootId	Get a single hoot
 router.get("/:hootId", async (req, res) => {
   try {
-    const hoot = await Hoot.findById(req.params.hootId).populate("author");
+    const hoot = await Hoot.findById(req.params.hootId).populate(["author", "comments.author"]);
     if (!hoot) {
       res.status(404);
       throw new Error(
@@ -136,6 +137,33 @@ router.get("/:hootId", async (req, res) => {
     } else {
       res.status(500).json({ err: error.message });
     }
+  }
+});
+
+// POST /hoot/:hootId/comments
+router.post("/:hootId/comments", async (req, res) => {
+  try {
+
+    req.body.author = req.user._id; // { author: someId, text: "Some comment"}
+    const updatedHoot = await Hoot.findByIdAndUpdate(
+      req.params.hootId,
+      {
+        $push: { comments: req.body },
+      },
+      { new: true },
+    );
+    
+    //  ** Another way we can do it **
+    // const hoot = await Hoot.findById(req.params.hootId);
+    // hoot.comments.push(req.body);
+    // await hoot.save();
+
+    const comment = updatedHoot.comments.at(-1);
+    comment._doc.author = req.user;
+
+    res.status(201).json(comment);
+  } catch (error) {
+    res.status(500).json({ err: error.message });
   }
 });
 
