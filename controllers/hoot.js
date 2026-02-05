@@ -122,7 +122,10 @@ router.post("/", async (req, res) => {
 //  GET	show	200	/hoots/:hootId	Get a single hoot
 router.get("/:hootId", async (req, res) => {
   try {
-    const hoot = await Hoot.findById(req.params.hootId).populate(["author", "comments.author"]);
+    const hoot = await Hoot.findById(req.params.hootId).populate([
+      "author",
+      "comments.author",
+    ]);
     if (!hoot) {
       res.status(404);
       throw new Error(
@@ -143,7 +146,6 @@ router.get("/:hootId", async (req, res) => {
 // POST /hoot/:hootId/comments
 router.post("/:hootId/comments", async (req, res) => {
   try {
-
     req.body.author = req.user._id; // { author: someId, text: "Some comment"}
     const updatedHoot = await Hoot.findByIdAndUpdate(
       req.params.hootId,
@@ -152,7 +154,7 @@ router.post("/:hootId/comments", async (req, res) => {
       },
       { new: true },
     );
-    
+
     //  ** Another way we can do it **
     // const hoot = await Hoot.findById(req.params.hootId);
     // hoot.comments.push(req.body);
@@ -164,6 +166,35 @@ router.post("/:hootId/comments", async (req, res) => {
     res.status(201).json(comment);
   } catch (error) {
     res.status(500).json({ err: error.message });
+  }
+});
+
+// PUT /hoots/:hootId/comments/:commentId
+router.put("/:hootId/comments/:commentId", async (req, res) => {
+  try {
+    const hoot = await Hoot.findById(req.params.hootId);
+    const comment = hoot.comments.id(req.params.commentId);
+
+    if (!comment.author.equals(req.user._id)) {
+      res.status(403); // not authorized
+      throw new Error(`You can only edit comments you own`);
+    }
+
+    if (!req.body.text.trim()) {
+      res.status(406);
+      throw new Error(`The text field must have valid text`);
+    }
+
+    req.body.author = req.user._id;
+    comment.set(req.body);
+    await comment.save();
+    comment._doc.author = req.user;
+    res.status(200).json(comment);
+  } catch (error) {
+    const { statusCode } = res;
+    res
+      .status([403, 406].includes(statusCode) ? statusCode : 500)
+      .json({ err: error.message });
   }
 });
 
