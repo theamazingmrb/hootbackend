@@ -187,7 +187,9 @@ router.put("/:hootId/comments/:commentId", async (req, res) => {
 
     req.body.author = req.user._id;
     comment.set(req.body);
-    await comment.save();
+
+    await hoot.save();
+
     comment._doc.author = req.user;
     res.status(200).json(comment);
   } catch (error) {
@@ -198,4 +200,28 @@ router.put("/:hootId/comments/:commentId", async (req, res) => {
   }
 });
 
+// Delete /hoots/:hootId/comments/:commentId
+router.delete("/:hootId/comments/:commentId", async (req, res) => {
+  try {
+    const hoot = await Hoot.findById(req.params.hootId);
+    const comment = hoot.comments.id(req.params.commentId);
+    if (!comment) {
+      res.status(404);
+      throw new Error("Comment not found");
+    }
+
+    if (!comment.author.equals(req.user._id)) {
+      res.status(406);
+      throw new Error("You are not authorized to delete this comment");
+    }
+
+    await comment.deleteOne();
+    await hoot.save();
+    res.status(200).json({ status: "Successfully Deleted" });
+  } catch (error) {
+    res
+      .status([404, 406].includes(statusCode) ? statusCode : 500)
+      .json({ err: error.message });
+  }
+});
 module.exports = router;
