@@ -1,9 +1,6 @@
 /*
     HTTP Method	Controller	Response	URI	Use Case
   
-   
-    PUT	update	200	/hoots/:hootId	Update a hoot
-    DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
     POST	createComment	200	/hoots/:hootId/comments	Create a comment
 */
 const router = require("express").Router();
@@ -23,6 +20,39 @@ router.get("/", async (req, res) => {
   }
 });
 
+//  DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
+router.delete("/:hootId", async (req, res) => {
+  try {
+    // const deletedHoot = await Hoot.findByIdAndDelete(req.params.hootId)
+    const hootToDelete = await Hoot.findById(req.params.hootId);
+    if (!hootToDelete) {
+      res.status(404);
+      throw new Error("Could not find hoot to delete");
+    }
+
+    // check if signed in user owns this hoot
+    if (!hootToDelete.author.equals(req.user._id)) {
+      res.status(403);
+      throw new Error("You are not authorized to delete this hoot");
+    }
+
+    await hootToDelete.deleteOne();
+
+    res.status(200).json(hootToDelete);
+  } catch (error) {
+    const { statusCode } = res;
+    res
+      .status([403, 404].includes(statusCode) ? statusCode : 500)
+      .json({ err: error.message });
+    // if (res.statusCode === 403) {
+    //   res.json({ err: error.message });
+    // } else {
+    //   res.status(500).json({ err: error.message });
+    // }
+  }
+});
+
+//   PUT	update	200	/hoots/:hootId	Update a hoot
 router.put("/:hootId", async (req, res) => {
   try {
     const foundHoot = await Hoot.findById(req.params.hootId);
@@ -51,8 +81,7 @@ router.put("/:hootId", async (req, res) => {
       throw new Error("Failed to updated hoot. Please try again");
     }
 
-    console.log(updatedHoot)
-    updatedHoot._doc.author = req.user
+    updatedHoot._doc.author = req.user;
 
     res.status(200).json(updatedHoot);
   } catch (error) {
