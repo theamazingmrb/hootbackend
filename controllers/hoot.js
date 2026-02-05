@@ -23,6 +23,47 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.put("/:hootId", async (req, res) => {
+  try {
+    const foundHoot = await Hoot.findById(req.params.hootId);
+    if (!foundHoot.author.equals(req.user._id)) {
+      res.status(403); // not authorized
+      throw new Error(`You can only edit hoots you own`);
+    }
+
+    if (!CATEGORIES.includes(req.body.category)) {
+      throw new Error(
+        `${req.body.category} is not a valid category. Please provide one of: ${CATEGORIES.join(", ")}`,
+      );
+    }
+
+    if (!req.body.text.trim() || !req.body.title.trim()) {
+      throw new Error(`The body and title fields must have valid text`);
+    }
+
+    const updatedHoot = await Hoot.findByIdAndUpdate(
+      req.params.hootId,
+      req.body,
+      { new: true },
+    );
+
+    if (!updatedHoot) {
+      throw new Error("Failed to updated hoot. Please try again");
+    }
+
+    console.log(updatedHoot)
+    updatedHoot._doc.author = req.user
+
+    res.status(200).json(updatedHoot);
+  } catch (error) {
+    if (res.statusCode === 403) {
+      res.json({ err: error.message });
+    } else {
+      res.status(500).json({ err: error.message });
+    }
+  }
+});
+
 // POST	create	200	/hoots	Create a hoot
 router.post("/", async (req, res) => {
   try {
@@ -51,7 +92,7 @@ router.post("/", async (req, res) => {
 //  GET	show	200	/hoots/:hootId	Get a single hoot
 router.get("/:hootId", async (req, res) => {
   try {
-    const hoot = await Hoot.findById(req.params.hootId).populate('author');
+    const hoot = await Hoot.findById(req.params.hootId).populate("author");
     if (!hoot) {
       res.status(404);
       throw new Error(
@@ -59,8 +100,7 @@ router.get("/:hootId", async (req, res) => {
       );
     }
 
-    res.status(200).json(hoot)
-
+    res.status(200).json(hoot);
   } catch (error) {
     if (res.statusCode === 404) {
       res.json({ err: error.message });
