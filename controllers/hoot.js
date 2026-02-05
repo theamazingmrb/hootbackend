@@ -1,15 +1,8 @@
-/*
-    HTTP Method	Controller	Response	URI	Use Case
-  
-    POST	createComment	200	/hoots/:hootId/comments	Create a comment
-*/
-const router = require("express").Router();
-const { trusted } = require("mongoose");
 const Hoot = require("../models/hoot");
 const CATEGORIES = ["News", "Sports", "Games", "Movies", "Music", "Television"];
 
 //   GET index 200	/hoots	List hoots
-router.get("/", async (req, res) => {
+const index = async (req, res) => {
   try {
     const hoots = await Hoot.find()
       .populate("author")
@@ -19,10 +12,10 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
-});
+};
 
 //  DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
-router.delete("/:hootId", async (req, res) => {
+const deleteHoot = async (req, res) => {
   try {
     // const deletedHoot = await Hoot.findByIdAndDelete(req.params.hootId)
     const hootToDelete = await Hoot.findById(req.params.hootId);
@@ -51,10 +44,10 @@ router.delete("/:hootId", async (req, res) => {
     //   res.status(500).json({ err: error.message });
     // }
   }
-});
+};
 
 //   PUT	update	200	/hoots/:hootId	Update a hoot
-router.put("/:hootId", async (req, res) => {
+const update = async (req, res) => {
   try {
     const foundHoot = await Hoot.findById(req.params.hootId);
     if (!foundHoot.author.equals(req.user._id)) {
@@ -92,10 +85,10 @@ router.put("/:hootId", async (req, res) => {
       res.status(500).json({ err: error.message });
     }
   }
-});
+};
 
 // POST	create	200	/hoots	Create a hoot
-router.post("/", async (req, res) => {
+const create = async (req, res) => {
   try {
     // checks / verifications
     if (!CATEGORIES.includes(req.body.category)) {
@@ -117,10 +110,10 @@ router.post("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
-});
+};
 
 //  GET	show	200	/hoots/:hootId	Get a single hoot
-router.get("/:hootId", async (req, res) => {
+const show = async (req, res) => {
   try {
     const hoot = await Hoot.findById(req.params.hootId).populate([
       "author",
@@ -141,10 +134,10 @@ router.get("/:hootId", async (req, res) => {
       res.status(500).json({ err: error.message });
     }
   }
-});
+};
 
 // POST /hoot/:hootId/comments
-router.post("/:hootId/comments", async (req, res) => {
+const addComment = async (req, res) => {
   try {
     req.body.author = req.user._id; // { author: someId, text: "Some comment"}
     const updatedHoot = await Hoot.findByIdAndUpdate(
@@ -167,10 +160,10 @@ router.post("/:hootId/comments", async (req, res) => {
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
-});
+};
 
 // PUT /hoots/:hootId/comments/:commentId
-router.put("/:hootId/comments/:commentId", async (req, res) => {
+const updateComment = async (req, res) => {
   try {
     const hoot = await Hoot.findById(req.params.hootId);
     const comment = hoot.comments.id(req.params.commentId);
@@ -198,10 +191,10 @@ router.put("/:hootId/comments/:commentId", async (req, res) => {
       .status([403, 406].includes(statusCode) ? statusCode : 500)
       .json({ err: error.message });
   }
-});
+};
 
 // Delete /hoots/:hootId/comments/:commentId
-router.delete("/:hootId/comments/:commentId", async (req, res) => {
+const deleteComment = async (req, res) => {
   try {
     const hoot = await Hoot.findById(req.params.hootId);
     const comment = hoot.comments.id(req.params.commentId);
@@ -223,5 +216,15 @@ router.delete("/:hootId/comments/:commentId", async (req, res) => {
       .status([404, 406].includes(statusCode) ? statusCode : 500)
       .json({ err: error.message });
   }
-});
-module.exports = router;
+};
+
+module.exports = {
+  index,
+  deleteHoot,
+  update,
+  create,
+  show,
+  addComment,
+  updateComment,
+  deleteComment,
+};

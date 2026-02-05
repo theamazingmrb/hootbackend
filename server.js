@@ -6,7 +6,7 @@ const cors = require('cors');
 const logger = require('morgan');
 const authRoutes = require('./controllers/auth')
 const userRoutes = require('./controllers/user');
-const hootRoutes = require('./controllers/hoot')
+const hootRoutes = require('./routes/hoot.routes')
 const verifyToken = require('./middleware/verify-token');
 
 require('./db/connection')
@@ -25,3 +25,8 @@ app.use('/hoots', hootRoutes)
 app.listen(3000, () => {
   console.log('The express app is ready!');
 });
+
+
+// Model View == (React) Controller, optional "R" stands routes
+// MVC*R
+
