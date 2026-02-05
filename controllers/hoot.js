@@ -1,7 +1,7 @@
 /*
     HTTP Method	Controller	Response	URI	Use Case
   
-    GET	show	200	/hoots/:hootId	Get a single hoot
+   
     PUT	update	200	/hoots/:hootId	Update a hoot
     DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
     POST	createComment	200	/hoots/:hootId/comments	Create a comment
@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
     const hoots = await Hoot.find()
       .populate("author")
       .sort({ createdAt: "desc" });
-      
+
     res.status(200).json(hoots);
   } catch (error) {
     res.status(500).json({ err: error.message });
@@ -45,6 +45,28 @@ router.post("/", async (req, res) => {
     res.status(201).json({ hoot });
   } catch (error) {
     res.status(500).json({ err: error.message });
+  }
+});
+
+//  GET	show	200	/hoots/:hootId	Get a single hoot
+router.get("/:hootId", async (req, res) => {
+  try {
+    const hoot = await Hoot.findById(req.params.hootId).populate('author');
+    if (!hoot) {
+      res.status(404);
+      throw new Error(
+        "We cannot find this hoot, please select another hoot from the list",
+      );
+    }
+
+    res.status(200).json(hoot)
+
+  } catch (error) {
+    if (res.statusCode === 404) {
+      res.json({ err: error.message });
+    } else {
+      res.status(500).json({ err: error.message });
+    }
   }
 });
 
