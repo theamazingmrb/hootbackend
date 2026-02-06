@@ -213,7 +213,7 @@ const deleteComment = async (req, res) => {
     res.status(200).json({ status: "Successfully Deleted" });
   } catch (error) {
     res
-      .status([404, 406].includes(statusCode) ? statusCode : 500)
+      .status([404, 406].includes(res.statusCode) ? res.statusCode : 500)
       .json({ err: error.message });
   }
 };
