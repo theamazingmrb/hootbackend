@@ -8,6 +8,7 @@ const authRoutes = require('./controllers/auth')
 const userRoutes = require('./controllers/user');
 const hootRoutes = require('./routes/hoot.routes')
 const verifyToken = require('./middleware/verify-token');
+const PORT = process.env.PORT || 3000
 
 require('./db/connection')
 app.use(cors());
@@ -22,8 +23,8 @@ app.use('/users', userRoutes)
 app.use(verifyToken) 
 app.use('/hoots', hootRoutes)
 
-app.listen(3000, () => {
-  console.log('The express app is ready!');
+app.listen(PORT, () => {
+  console.log('The express app is ready!', PORT);
 });
 
 
